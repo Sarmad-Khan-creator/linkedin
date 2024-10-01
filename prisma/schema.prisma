@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String         @id @default(uuid())
+  clerkId                String
+  email                  String         @unique
+  firstName              String
+  lastName               String
+  userName               String?        @unique
+  headline               String?
+  profilePic             String?
+  coverPhoto             String?
+  connectionInitiated    Connection[]   @relation("initiatedConnection")
+  connectionRecieved     Connection[]   @relation("receivedConnection")
+  posts                  Post[]
+  comments               Comment[]
+  reactions              Reaction[]
+  joindedGroups          Group[]
+  applications           Application[]
+  notifications          Notification[]
+  Job                    Job[]
+  createdGroup           Group[]        @relation("createdGroup")
+  conversationsInitiated Conversation[] @relation("initiatedConversations")
+  conversationsReceived  Conversation[] @relation("receivedConversations")
+}
+
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  permission  Boolean
+  createdAt   DateTime
+  updatedAt   DateTime
+  members     User[]
+  admin       User     @relation("createdGroup", fields: [adminId], references: [id])
+  adminId     String
+  posts       Post[]
+}
+
+enum ConnectinoStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Connection {
+  id                  String           @id @default(uuid())
+  connectionInitiator User             @relation("initiatedConnection", fields: [initiatorId], references: [id])
+  connectionRecipient User             @relation("receivedConnection", fields: [recipientId], references: [id])
+  initiatorId         String
+  recipientId         String
+  status              ConnectinoStatus
+}
+
+model Post {
+  id        String     @id @default(uuid())
+  userId    String
+  content   String
+  createdAt DateTime
+  updatedAt DateTime
+  comments  Comment[]
+  reactions Reaction[]
+  user      User       @relation(fields: [userId], references: [id])
+  Group     Group?     @relation(fields: [groupId], references: [id])
+  groupId   String?
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String
+  authorId  String
+  content   String
+  createdAt DateTime
+  updatedAt DateTime
+  post      Post     @relation(fields: [postId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id])
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  postId    String
+  authorId  String
+  content   String
+  createdAt DateTime
+  updatedAt DateTime
+  post      Post     @relation(fields: [postId], references: [id])
+  author    User     @relation(fields: [authorId], references: [id])
+}
+
+model Application {
+  id          String   @id @default(uuid())
+  jobId       String
+  userId      String
+  resume      String
+  coverLetter String
+  createdAt   DateTime
+  updatedAt   DateTime
+  job         Job      @relation(fields: [jobId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Conversation {
+  id          String    @id @default(uuid())
+  initiatorId String
+  recipientId String
+  initiator   User      @relation("initiatedConversations", fields: [initiatorId], references: [id])
+  recipient   User      @relation("receivedConversations", fields: [recipientId], references: [id])
+  createdAt   DateTime
+  updatedAt   DateTime
+  messages    Message[]
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  content        String
+  createdAt      DateTime
+  updatedAt      DateTime
+  Conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  content   String
+  createdAt DateTime
+  updatedAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Job {
+  id           String        @id @default(uuid())
+  title        String
+  description  String
+  location     String
+  salary       Float
+  createdAt    DateTime
+  updatedAt    DateTime
+  applications Application[]
+  publisher    User?         @relation(fields: [publisherId], references: [id])
+  publisherId  String?
+}
